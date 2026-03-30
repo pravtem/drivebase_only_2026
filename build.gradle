@@ -12,6 +12,16 @@ sourceSets {
     main {
         java {
            srcDir '../../yagsl/java/'
+           // This example uses REV + navX, so skip the CTRE-backed YAGSL implementations.
+           exclude 'swervelib/encoders/CANCoderSwerve.java'
+           exclude 'swervelib/encoders/TalonFXSEncoderAnalogSwerve.java'
+           exclude 'swervelib/encoders/TalonSRXEncoderSwerve.java'
+           exclude 'swervelib/imu/Pigeon2Swerve.java'
+           exclude 'swervelib/imu/PigeonSwerve.java'
+           exclude 'swervelib/imu/PigeonViaTalonSRXSwerve.java'
+           exclude 'swervelib/motors/TalonFXSSwerve.java'
+           exclude 'swervelib/motors/TalonFXSwerve.java'
+           exclude 'swervelib/motors/TalonSRXSwerve.java'
         }
     }
 }
