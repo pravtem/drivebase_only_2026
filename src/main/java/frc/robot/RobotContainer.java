@@ -199,8 +199,8 @@ public class RobotContainer {
       driverController.L1().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
       driverController.R1().onTrue(Commands.none());
 
-      shooterController.rightBumper().whileTrue(intakeSubsystem.bottomClockwiseCommand());
-      shooterController.leftBumper().whileTrue(intakeSubsystem.bottomCounterClockwiseCommand());
+      shooterController.rightBumper().whileTrue(intakeSubsystem.intakeClockwiseCommand());
+      shooterController.leftBumper().whileTrue(intakeSubsystem.intakeCounterClockwiseCommand());
       shooterController.rightTrigger().whileTrue(intakeSubsystem.triggerIntakeCommand());
       shooterController.leftTrigger().whileTrue(intakeSubsystem.triggerShooterCommand());
       shooterController.b()
