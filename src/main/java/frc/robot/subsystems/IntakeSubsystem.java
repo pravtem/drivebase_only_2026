@@ -26,6 +26,7 @@ public class IntakeSubsystem extends SubsystemBase {
   private static final int INTAKE_CAN_ID = 13;
   private static final int TOP_SHOOTER_CAN_ID = 14;
   private static final int BOTTOM_SHOOTER_CAN_ID = 15;
+  private static final int EXTRA_SHOOTER_CAN_ID = 16;
   private static final double INTAKE_POWER = 1.0;
   private static final double SHOOTER_FREE_SPEED_RPM = 5676.0;
   private static final double SHOOTER_TARGET_MAX_RPM = 5000.0;
@@ -34,10 +35,13 @@ public class IntakeSubsystem extends SubsystemBase {
   private final SparkMax intakeMotor = new SparkMax(INTAKE_CAN_ID, MotorType.kBrushless);
   private final SparkMax topShooterMotor = new SparkMax(TOP_SHOOTER_CAN_ID, MotorType.kBrushless);
   private final SparkMax bottomShooterMotor = new SparkMax(BOTTOM_SHOOTER_CAN_ID, MotorType.kBrushless);
+  private final SparkMax extraShooterMotor = new SparkMax(EXTRA_SHOOTER_CAN_ID, MotorType.kBrushless);
   private final RelativeEncoder topEncoder = topShooterMotor.getEncoder();
   private final RelativeEncoder bottomEncoder = bottomShooterMotor.getEncoder();
+  private final RelativeEncoder extraEncoder = extraShooterMotor.getEncoder();
   private final SparkClosedLoopController topController = topShooterMotor.getClosedLoopController();
   private final SparkClosedLoopController bottomController = bottomShooterMotor.getClosedLoopController();
+  private final SparkClosedLoopController extraController = extraShooterMotor.getClosedLoopController();
   private double topClockwiseSpeed = 1.0;
   private double bottomClockwiseSpeed = 1.0;
 
@@ -60,12 +64,16 @@ public class IntakeSubsystem extends SubsystemBase {
   private void configureShooterVelocityControl() {
     REVLibError topError = configureShooterMotor(topShooterMotor);
     REVLibError bottomError = configureShooterMotor(bottomShooterMotor);
+    REVLibError extraError = configureShooterMotor(extraShooterMotor);
 
     if (topError != REVLibError.kOk) {
       DriverStation.reportWarning("Top shooter motor failed to configure closed-loop velocity control.", false);
     }
     if (bottomError != REVLibError.kOk) {
       DriverStation.reportWarning("Bottom shooter motor failed to configure closed-loop velocity control.", false);
+    }
+    if (extraError != REVLibError.kOk) {
+      DriverStation.reportWarning("Extra shooter motor failed to configure closed-loop velocity control.", false);
     }
   }
 
@@ -83,8 +91,10 @@ public class IntakeSubsystem extends SubsystemBase {
   private void publishClockwiseSpeeds() {
     SmartDashboard.putNumber("Shooter/Top Clockwise Speed", topClockwiseSpeed);
     SmartDashboard.putNumber("Shooter/Bottom Clockwise Speed", bottomClockwiseSpeed);
+    SmartDashboard.putNumber("Shooter/Extra Clockwise Speed", topClockwiseSpeed);
     SmartDashboard.putNumber("Shooter/Top Target RPM", topClockwiseSpeed * SHOOTER_TARGET_MAX_RPM);
     SmartDashboard.putNumber("Shooter/Bottom Target RPM", bottomClockwiseSpeed * SHOOTER_TARGET_MAX_RPM);
+    SmartDashboard.putNumber("Shooter/Extra Target RPM", topClockwiseSpeed * SHOOTER_TARGET_MAX_RPM);
   }
 
   public void setShooterPower(double normalizedPower) {
@@ -103,6 +113,10 @@ public class IntakeSubsystem extends SubsystemBase {
 
   private void setBottomVelocity(double normalizedSpeed) {
     bottomController.setSetpoint(normalizedSpeed * SHOOTER_TARGET_MAX_RPM, ControlType.kVelocity);
+  }
+
+  private void setExtraVelocity(double normalizedSpeed) {
+    extraController.setSetpoint(normalizedSpeed * SHOOTER_TARGET_MAX_RPM, ControlType.kVelocity);
   }
 
   public void runIntakeClockwise() {
@@ -125,12 +139,14 @@ public class IntakeSubsystem extends SubsystemBase {
     runIntakeCounterClockwise();
     setTopVelocity(topClockwiseSpeed);
     setBottomVelocity(bottomClockwiseSpeed);
+    setExtraVelocity(topClockwiseSpeed);
   }
 
   public void runTriggerShoot() {
     runIntakeClockwise();
     setTopVelocity(topClockwiseSpeed);
     setBottomVelocity(bottomClockwiseSpeed);
+    setExtraVelocity(topClockwiseSpeed);
   }
 
   public void stopIntake() {
@@ -145,16 +161,22 @@ public class IntakeSubsystem extends SubsystemBase {
     bottomShooterMotor.stopMotor();
   }
 
+  public void stopExtra() {
+    extraShooterMotor.stopMotor();
+  }
+
   public void stopAll() {
     intakeMotor.stopMotor();
     topShooterMotor.stopMotor();
     bottomShooterMotor.stopMotor();
+    extraShooterMotor.stopMotor();
   }
 
   @Override
   public void periodic() {
     SmartDashboard.putNumber("Shooter/Top Actual RPM", topEncoder.getVelocity());
     SmartDashboard.putNumber("Shooter/Bottom Actual RPM", bottomEncoder.getVelocity());
+    SmartDashboard.putNumber("Shooter/Extra Actual RPM", extraEncoder.getVelocity());
   }
 
   public Command intakeClockwiseCommand() {
