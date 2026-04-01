@@ -23,6 +23,11 @@ public final class Constants
   public static final Matter CHASSIS    = new Matter(new Translation3d(0, 0, Units.inchesToMeters(8)), ROBOT_MASS);
   public static final double LOOP_TIME  = 0.13; //s, 20ms + 110ms sprk max velocity lag
   public static final double MAX_SPEED  = Units.feetToMeters(14.5);
+  public static final double MIN_SPEED = Units.feetToMeters(2);
+  public static final double SPEED_STEP = 0.5;
+  public static final double SHOOTER_SPEED_STEP = 0.05;
+  public static final double SHOOTER_B_PRESET_POWER = 0.55;
+  public static final double SHOOTER_MAX_POWER = 1.0;
   // Maximum speed of the robot in meters per second, used to limit acceleration.
 
 //  public static final class AutonConstants
