@@ -10,10 +10,12 @@ import com.revrobotics.REVLibError;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.FeedbackSensor;
+import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
+import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.math.MathUtil;
@@ -24,23 +26,24 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class IntakeSubsystem extends SubsystemBase {
   private static final int INTAKE_CAN_ID = 13;
-  private static final int TOP_SHOOTER_CAN_ID = 14;
-  private static final int BOTTOM_SHOOTER_CAN_ID = 15;
+  private static final int TOP_FIRST_SHOOTER_CAN_ID = 14;
+  private static final int TOP_SECOND_SHOOTER_CAN_ID = 15;
   private static final int EXTRA_SHOOTER_CAN_ID = 16;
   private static final double INTAKE_POWER = 1.0;
-  private static final double SHOOTER_FREE_SPEED_RPM = 5676.0;
+  private static final double NEO_SHOOTER_FREE_SPEED_RPM = 5676.0;
+  private static final double VORTEX_SHOOTER_FREE_SPEED_RPM = 6784.0;
   private static final double SHOOTER_TARGET_MAX_RPM = 5000.0;
   private static final double SHOOTER_VELOCITY_KP = 0.0002;
 
   private final SparkMax intakeMotor = new SparkMax(INTAKE_CAN_ID, MotorType.kBrushless);
-  private final SparkMax topShooterMotor = new SparkMax(TOP_SHOOTER_CAN_ID, MotorType.kBrushless);
-  private final SparkMax bottomShooterMotor = new SparkMax(BOTTOM_SHOOTER_CAN_ID, MotorType.kBrushless);
-  private final SparkMax extraShooterMotor = new SparkMax(EXTRA_SHOOTER_CAN_ID, MotorType.kBrushless);
-  private final RelativeEncoder topEncoder = topShooterMotor.getEncoder();
-  private final RelativeEncoder bottomEncoder = bottomShooterMotor.getEncoder();
+  private final SparkMax topFirstShooterMotor = new SparkMax(TOP_FIRST_SHOOTER_CAN_ID, MotorType.kBrushless);
+  private final SparkMax topSecondShooterMotor = new SparkMax(TOP_SECOND_SHOOTER_CAN_ID, MotorType.kBrushless);
+  private final SparkFlex extraShooterMotor = new SparkFlex(EXTRA_SHOOTER_CAN_ID, MotorType.kBrushless);
+  private final RelativeEncoder topEncoder = topFirstShooterMotor.getEncoder();
+  private final RelativeEncoder bottomEncoder = topSecondShooterMotor.getEncoder();
   private final RelativeEncoder extraEncoder = extraShooterMotor.getEncoder();
-  private final SparkClosedLoopController topController = topShooterMotor.getClosedLoopController();
-  private final SparkClosedLoopController bottomController = bottomShooterMotor.getClosedLoopController();
+  private final SparkClosedLoopController topFirstController = topFirstShooterMotor.getClosedLoopController();
+  private final SparkClosedLoopController topSecondController = topSecondShooterMotor.getClosedLoopController();
   private final SparkClosedLoopController extraController = extraShooterMotor.getClosedLoopController();
   private double topClockwiseSpeed = 1.0;
   private double bottomClockwiseSpeed = 1.0;
@@ -62,8 +65,8 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   private void configureShooterVelocityControl() {
-    REVLibError topError = configureShooterMotor(topShooterMotor);
-    REVLibError bottomError = configureShooterMotor(bottomShooterMotor);
+    REVLibError topError = configureShooterMotor(topFirstShooterMotor);
+    REVLibError bottomError = configureShooterMotor(topSecondShooterMotor);
     REVLibError extraError = configureShooterMotor(extraShooterMotor);
 
     if (topError != REVLibError.kOk) {
@@ -83,7 +86,18 @@ public class IntakeSubsystem extends SubsystemBase {
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
         .pid(SHOOTER_VELOCITY_KP, 0.0, 0.0)
         .outputRange(-1.0, 1.0);
-    config.closedLoop.feedForward.kV(12.0 / SHOOTER_FREE_SPEED_RPM);
+    config.closedLoop.feedForward.kV(12.0 / NEO_SHOOTER_FREE_SPEED_RPM);
+
+    return motor.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+  }
+
+  private REVLibError configureShooterMotor(SparkFlex motor) {
+    SparkFlexConfig config = new SparkFlexConfig();
+    config.closedLoop
+        .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+        .pid(SHOOTER_VELOCITY_KP, 0.0, 0.0)
+        .outputRange(-1.0, 1.0);
+    config.closedLoop.feedForward.kV(12.0 / VORTEX_SHOOTER_FREE_SPEED_RPM);
 
     return motor.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
   }
@@ -108,11 +122,11 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   private void setTopVelocity(double normalizedSpeed) {
-    topController.setSetpoint(normalizedSpeed * SHOOTER_TARGET_MAX_RPM, ControlType.kVelocity);
+    topFirstController.setSetpoint(normalizedSpeed * SHOOTER_TARGET_MAX_RPM, ControlType.kVelocity);
   }
 
   private void setBottomVelocity(double normalizedSpeed) {
-    bottomController.setSetpoint(normalizedSpeed * SHOOTER_TARGET_MAX_RPM, ControlType.kVelocity);
+    topSecondController.setSetpoint(normalizedSpeed * SHOOTER_TARGET_MAX_RPM, ControlType.kVelocity);
   }
 
   private void setExtraVelocity(double normalizedSpeed) {
@@ -137,16 +151,17 @@ public class IntakeSubsystem extends SubsystemBase {
 
   public void runTriggerIntake() {
     runIntakeCounterClockwise();
-    setTopVelocity(topClockwiseSpeed);
-    setBottomVelocity(bottomClockwiseSpeed);
-    setExtraVelocity(topClockwiseSpeed);
+    setExtraVelocity(-topClockwiseSpeed);
   }
 
   public void runTriggerShoot() {
-    runIntakeClockwise();
-    setTopVelocity(topClockwiseSpeed);
-    setBottomVelocity(bottomClockwiseSpeed);
-    setExtraVelocity(topClockwiseSpeed);
+    runIntakeCounterClockwise();
+    setTopVelocity(-topClockwiseSpeed);
+    setBottomVelocity(-bottomClockwiseSpeed);
+    if (topEncoder.getVelocity() < -2750) {
+      setExtraVelocity(topClockwiseSpeed);
+    }
+
   }
 
   public void stopIntake() {
@@ -154,11 +169,11 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public void stopTop() {
-    topShooterMotor.stopMotor();
+    topFirstShooterMotor.stopMotor();
   }
 
   public void stopBottom() {
-    bottomShooterMotor.stopMotor();
+    topSecondShooterMotor.stopMotor();
   }
 
   public void stopExtra() {
@@ -167,8 +182,8 @@ public class IntakeSubsystem extends SubsystemBase {
 
   public void stopAll() {
     intakeMotor.stopMotor();
-    topShooterMotor.stopMotor();
-    bottomShooterMotor.stopMotor();
+    topFirstShooterMotor.stopMotor();
+    topSecondShooterMotor.stopMotor();
     extraShooterMotor.stopMotor();
   }
 
