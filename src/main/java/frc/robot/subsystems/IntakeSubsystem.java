@@ -106,13 +106,13 @@ public class IntakeSubsystem extends SubsystemBase {
     SmartDashboard.putNumber("Shooter/Top Clockwise Speed", topClockwiseSpeed);
     SmartDashboard.putNumber("Shooter/Bottom Clockwise Speed", bottomClockwiseSpeed);
     SmartDashboard.putNumber("Shooter/Extra Clockwise Speed", topClockwiseSpeed);
-    SmartDashboard.putNumber("Shooter/Top Target RPM", topClockwiseSpeed * SHOOTER_TARGET_MAX_RPM);
-    SmartDashboard.putNumber("Shooter/Bottom Target RPM", bottomClockwiseSpeed * SHOOTER_TARGET_MAX_RPM);
-    SmartDashboard.putNumber("Shooter/Extra Target RPM", topClockwiseSpeed * SHOOTER_TARGET_MAX_RPM);
+    SmartDashboard.putNumber("Shooter/Top Target RPM", (topClockwiseSpeed - 0.04) * SHOOTER_TARGET_MAX_RPM);
+    SmartDashboard.putNumber("Shooter/Bottom Target RPM", (bottomClockwiseSpeed - 0.04) * SHOOTER_TARGET_MAX_RPM);
+    SmartDashboard.putNumber("Shooter/Extra Target RPM", (topClockwiseSpeed - 0.04) * SHOOTER_TARGET_MAX_RPM);
   }
 
   public void setShooterPower(double normalizedPower) {
-    topClockwiseSpeed = MathUtil.clamp(normalizedPower, 0.0, 1.0);
+    topClockwiseSpeed = MathUtil.clamp(normalizedPower, 0.0, 1.0) + 0.04;
     bottomClockwiseSpeed = topClockwiseSpeed;
     publishClockwiseSpeeds();
   }
