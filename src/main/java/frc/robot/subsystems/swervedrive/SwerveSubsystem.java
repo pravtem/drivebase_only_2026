@@ -16,6 +16,8 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Config;
@@ -118,6 +120,12 @@ public class SwerveSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
+    Pose2d currentPose = getPose();
+    swerveDrive.field.setRobotPose(currentPose);
+    swerveDrive.field.getObject("Modules").setPoses(swerveDrive.getSwerveModulePoses(currentPose));
+    SmartDashboard.putNumber("Robot X (m)", currentPose.getX());
+    SmartDashboard.putNumber("Robot Y (m)", currentPose.getY());
+    SmartDashboard.putNumber("Robot Heading (deg)", currentPose.getRotation().getDegrees());
   }
 
   @Override
@@ -347,6 +355,15 @@ public class SwerveSubsystem extends SubsystemBase {
    */
   public void postTrajectory(Trajectory trajectory) {
     swerveDrive.postTrajectory(trajectory);
+  }
+
+  /**
+   * Gets the live field view used for dashboard visualization.
+   *
+   * @return field widget data source.
+   */
+  public Field2d getField() {
+    return swerveDrive.field;
   }
 
   /**

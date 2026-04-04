@@ -114,6 +114,7 @@ public class RobotContainer {
     // Configure the trigger bindings
     configureBindings();
     DriverStation.silenceJoystickConnectionWarning(true);
+    SmartDashboard.putData("Field", drivebase.getField());
 
     // Set the default auto (do nothing)
     autoChooser.setDefaultOption("Do Nothing", Commands.runOnce(drivebase::zeroGyroWithAlliance)
